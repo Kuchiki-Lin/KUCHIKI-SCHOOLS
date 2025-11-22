@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"school-backend/database"
-"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -126,47 +128,85 @@ func GetCoursesByStudentDepartment(c *gin.Context) {
 
 
 func GetStudentsForTeacher(c *gin.Context) {
-	fmt.Println("[DEBUG]", c)
-	teacherID := c.Param("id")
+    slug := c.Param("slug")    // school slug
+    teacherID := c.Param("id") // teacher ID
 
-	query := `
-	SELECT 
-		s.fullname, c.name, c.code
-	FROM 
-		student_courses sc
-	JOIN 
-		courses c ON sc.course_id = c.id
-	JOIN 
-		teacher_courses tc ON tc.course_id = c.id
-	JOIN 
-		students s ON sc.student_id = s.id
-	WHERE 
-		tc.teacher_id = ?
-	`
+    log.Printf("[DEBUG] GetStudentsForTeacher called with teacherID=%s, slug=%s", teacherID, slug)
 
-	rows, err := database.DB.Query(query, teacherID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Query failed"})
-		return
-	}
-	fmt.Println("[DEBUG]", rows)
-	defer rows.Close()
+    // ✅ FIXED QUERY:
+    query := `
+        SELECT DISTINCT
+            s.id,
+            s.fullname,
+            c.name AS course_name,
+            c.code AS course_code
+        FROM 
+            teacher_courses tc
+        JOIN 
+            courses c ON tc.course_id = c.id
+        JOIN 
+            student_courses sc ON sc.course_id = c.id
+        JOIN 
+            students s ON sc.student_id = s.id
+        JOIN 
+            schools sch ON s.school_id = sch.id
+        WHERE 
+            tc.teacher_id = ?
+        AND 
+            sch.slug = ?
+        ORDER BY s.fullname ASC, c.name ASC
+    `
 
-	var results []map[string]interface{}
-	for rows.Next() {
-		var fullname, courseName, courseCode string
-		if err := rows.Scan(&fullname, &courseName, &courseCode); err != nil {
-			continue
-		}
-		results = append(results, gin.H{
-			"student": fullname,
-			"course":  courseName,
-			"code":    courseCode,
-			"status":  "✔ Registered",
-		})
-	}
+    log.Printf("[DEBUG] Executing query: %s", query)
 
-	c.JSON(http.StatusOK, results)
+    rows, err := database.DB.Query(query, teacherID, slug)
+    if err != nil {
+        log.Printf("[ERROR] Query failed: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Query failed"})
+        return
+    }
+    defer rows.Close()
+    log.Println("[DEBUG] Query executed successfully")
+
+    type StudentCourse struct {
+        Student string `json:"student"`
+        Course  string `json:"course"`
+        Code    string `json:"code"`
+        Status  string `json:"status"`
+    }
+
+    var results []StudentCourse
+
+    for rows.Next() {
+        var fullname, courseName, courseCode string
+        var studentID int
+        if err := rows.Scan(&studentID, &fullname, &courseName, &courseCode); err != nil {
+            log.Printf("[ERROR] Row scan failed: %v", err)
+            continue
+        }
+
+        results = append(results, StudentCourse{
+            Student: fullname,
+            Course:  courseName,
+            Code:    courseCode,
+            Status:  "✔ Registered",
+        })
+    }
+
+    if err := rows.Err(); err != nil {
+        log.Printf("[ERROR] Row iteration error: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading results"})
+        return
+    }
+
+    if len(results) == 0 {
+        log.Println("[DEBUG] No students found for this teacher and school slug")
+        c.JSON(http.StatusOK, gin.H{"message": "No students found for this teacher"})
+        return
+    }
+
+    log.Printf("[DEBUG] Returning %d students", len(results))
+    c.JSON(http.StatusOK, results)
 }
 
 

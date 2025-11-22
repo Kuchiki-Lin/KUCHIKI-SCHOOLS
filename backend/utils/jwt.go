@@ -1,18 +1,22 @@
 package utils
 
 import (
-    "github.com/golang-jwt/jwt/v4"
-    "time"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 
 var jwtKey = []byte("secret-key") // use env in prod
 
-func GenerateJWT(id int, username, department, role string) string {
+func GenerateJWT(id , schoolID int, fullname, department,dbSlug, role string) string {
     claims := jwt.MapClaims{
          "id":      id,
-        "username": username,
+         "schoolID":schoolID,
+        "fullname": fullname,
         "department": department,
+        "dbSlug":dbSlug,
         "role":     role,
         "exp":      time.Now().Add(time.Hour * 72).Unix(),
     }
@@ -31,30 +35,33 @@ func ValidateToken(tokenStr string) bool {
 
 
 
-
-func VerifyJWT(tokenStr string) (id int, role, username, department string, err error) {
+func VerifyJWT(tokenStr string) (id, schoolID int, role, fullname, department, dbSlug string, err error) {
     token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
         return jwtKey, nil
     })
-
     if err != nil || !token.Valid {
-        return 0, "", "", "", err
+        return 0, 0, "", "", "", "", err
     }
 
     claims, ok := token.Claims.(jwt.MapClaims)
     if !ok {
-        return 0, "", "", "", err
+        return 0, 0, "", "", "", "", fmt.Errorf("invalid claims")
     }
 
     idFloat, ok := claims["id"].(float64)
     if !ok {
-        return 0, "", "", "", err
+        return 0, 0, "", "", "", "", fmt.Errorf("invalid id")
     }
 
-    departmentStr, ok := claims["department"].(string)
+    schoolIDFloat, ok := claims["schoolID"].(float64)
     if !ok {
-        return 0, "", "", "", err
+        return 0, 0, "", "", "", "", fmt.Errorf("invalid schoolID")
     }
 
-    return int(idFloat), claims["role"].(string), claims["username"].(string), departmentStr, nil
+    roleStr, _ := claims["role"].(string)
+    fullnameStr, _ := claims["fullname"].(string)
+    departmentStr, _ := claims["department"].(string)
+    dbSlugStr, _ := claims["dbSlug"].(string)
+
+    return int(idFloat), int(schoolIDFloat), roleStr, fullnameStr, departmentStr, dbSlugStr, nil
 }

@@ -7,7 +7,13 @@ type User = {
   id: number;
   fullname: string;
   role: string;
-  department : string;
+  department: string;
+  dbSlug: string;
+  logo_url: string;
+  background_url: string;
+  theme_template: string;
+  logo_text: string;
+  background_color: string;
 };
 
 type UserContextType = {
@@ -21,7 +27,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Fetch user session
     const fetchUser = async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
         method: 'GET',
@@ -30,12 +35,20 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       });
       if (res.ok) {
         const data = await res.json();
-        setUser({
-          id: data.id,
-          fullname: data.fullname,
-          role: data.role,
-          department: data.department
-        });
+        console.log(data);
+      setUser({
+  id: data.id,
+  fullname: data.fullname,
+  role: data.role,
+  department: data.department,
+  dbSlug: data.dbSlug,
+  logo_url: data.logo_url,
+  background_url: data.background_url,
+  theme_template: data.theme_template,
+  logo_text: data.logo_text,
+  background_color: data.background_color,
+});
+
       }
     };
 

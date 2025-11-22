@@ -11,6 +11,7 @@ type ClassSchedule struct {
 	EndTime   string    `json:"end_time"`
 	CourseCode string `  json:"course_code"`
     CourseName string     `json:"course_name"`
+	SchoolID   int    ` json:"school_id"`
 	Venue     string    `json:"venue"`
 	Semester  string    `json:"semester"`
 	CreatedAt time.Time

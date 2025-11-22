@@ -42,47 +42,58 @@ func CreateCat(c *gin.Context) {
 }
 
 func GetCatsByTeacher(c *gin.Context) {
-	teacherID := c.Param("id")
-	query := `
-SELECT cats.id, cats.course_id, courses.name AS course_name, cats.teacher_id, cats.cat_datetime
-FROM cats
-JOIN courses ON cats.course_id = courses.id
-WHERE cats.teacher_id = ?
-ORDER BY cats.cat_datetime ASC
-`
+    teacherID := c.Param("id")
+    slug := c.Param("slug")
 
+    query := `
+    SELECT 
+        cats.id, 
+        cats.course_id, 
+        courses.name AS course_name, 
+        cats.teacher_id, 
+        cats.cat_datetime
+    FROM cats
+    JOIN courses ON cats.course_id = courses.id
+    JOIN teachers t ON cats.teacher_id = t.id
+    JOIN schools s ON t.school_id = s.id
+    WHERE cats.teacher_id = ?
+    AND s.slug = ?
+    ORDER BY cats.cat_datetime ASC
+    `
 
-	rows, err := database.DB.Query(query, teacherID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch CATs"})
-		return
-	}
-	defer rows.Close()
+    rows, err := database.DB.Query(query, teacherID, slug)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch CATs"})
+        return
+    }
+    defer rows.Close()
 
-	type Cat struct {
-	ID          int       `json:"id"`
-	CourseID    int       `json:"course_id"`
-	CourseName  string    `json:"course_name"`
-	TeacherID   int       `json:"teacher_id"`
-	CatDateTime time.Time `json:"cat_datetime"`
+    type Cat struct {
+        ID          int       `json:"id"`
+        CourseID    int       `json:"course_id"`
+        CourseName  string    `json:"course_name"`
+        TeacherID   int       `json:"teacher_id"`
+        CatDateTime time.Time `json:"cat_datetime"`
+    }
+
+    var cats []Cat
+    for rows.Next() {
+        var cat Cat
+        if err := rows.Scan(&cat.ID, &cat.CourseID, &cat.CourseName, &cat.TeacherID, &cat.CatDateTime); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning CAT row"})
+            return
+        }
+        cats = append(cats, cat)
+    }
+
+    if err := rows.Err(); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading results"})
+        return
+    }
+
+    c.JSON(http.StatusOK, cats)
 }
 
-
-	var cats []Cat
-	for rows.Next() {
-
-		var cat Cat
-
-		if err := rows.Scan(&cat.ID, &cat.CourseID, &cat.CourseName, &cat.TeacherID, &cat.CatDateTime); 
-		err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning CAT row"})
-			return
-		}
-		cats = append(cats, cat)
-	}
-
-	c.JSON(http.StatusOK, cats)
-}
 
 func DeleteCat(c *gin.Context) {
 	catID := c.Param("id")

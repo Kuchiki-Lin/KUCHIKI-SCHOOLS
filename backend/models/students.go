@@ -14,6 +14,7 @@ type Student struct {
 	Department string `json:"department"` 
 	Age               int    `json:"age"`
 	Year              string `json:"year"`
-	
+	BackgroundURL    string `json:"background_url"`
+	Slug             string `json:"slug"`
 	CreatedAt time.Time `json:"created_at"`
 }

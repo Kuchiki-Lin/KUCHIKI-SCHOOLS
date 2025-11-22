@@ -64,7 +64,7 @@ useEffect(() => {
             {classes.length > 0 ? (
               <ul className="space-y-2">
                 {classes.map(cls => (
-                  <li key={cls.id} className="text-sm text-gray-800">
+                  <li key={cls.id} className="text-sm text-gray-800 font-light">
                     <strong>{cls.course}</strong> — {cls.start_time} to {cls.end_time} @ <span className="text-blue-600">{cls.venue}</span>
                   </li>
                 ))}

@@ -116,17 +116,19 @@ export default function UpcomingClassSummary({ studentId }: { studentId: number 
     : upcomingClass.day_of_week;
 
   return (
-    <div className="bg-white p-3 rounded-lg border border-green-200">
-      <p className="text-md font-semibold text-green-700 flex items-center mb-1">
-        <CalendarOutlined className="mr-2" /> {upcomingClass.course_name}
+    <div className=" p-3 rounded-lg border  font-bold"
+    style={{fontFamily:"cursive", fontWeight:"bolder"}}
+    >
+      <p className=" font-semibold  flex items-center mb-1">
+        <CalendarOutlined className="mr-2" /> {upcomingClass.course_name.toLocaleUpperCase()}
       </p>
-      <p className="text-sm text-green-600 flex items-center mb-1">
+      <p className="bg-white flex   items-center mb-1">
         <ClockCircleOutlined className="mr-2" /> {displayDay}, {upcomingClass.start_time} - {upcomingClass.end_time}
       </p>
-      <p className="text-sm text-green-600 flex items-center">
+      <p className="bg-white flex items-center">
         <EnvironmentOutlined className="mr-2" /> {upcomingClass.venue}
       </p>
-      <p className="text-xs text-green-500 mt-2">Semester: {upcomingClass.semester}</p>
+      <p className=" bg-white mt-2">Semester: {upcomingClass.semester}</p>
     </div>
   );
 }

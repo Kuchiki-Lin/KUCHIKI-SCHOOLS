@@ -1,11 +1,12 @@
 package controllers
 
 import (
-    "fmt"
-	"net/http"
 	"database/sql"
-	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
 	"school-backend/database"
+
+	"github.com/gin-gonic/gin"
 )
 
 
@@ -15,154 +16,178 @@ type UserAccount struct {
 	Department string `json:"department"`
 }
 
-
-
 func GetAllTeachersDetailed(c *gin.Context) {
-	query := `
-	SELECT t.id, t.fullname, t.department, 
-	       c.name AS course_name, c.code, 
-	       COUNT(sc.student_id) AS student_count
-	FROM teachers t
-	LEFT JOIN teacher_courses tc ON t.id = tc.teacher_id
-	LEFT JOIN courses c ON tc.course_id = c.id
-	LEFT JOIN student_courses sc ON c.id = sc.course_id
-	GROUP BY t.id, t.fullname, t.department, c.name, c.code
-	ORDER BY t.fullname ASC`
+    schoolSlug := c.Param("slug")
+    log.Printf("[DEBUG] Entered GetAllTeachersDetailed, slug=%s", schoolSlug)
 
-	rows, err := database.DB.Query(query)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teacher data"})
-		return
-	}
-	defer rows.Close()
+    query := `
+    SELECT t.id, t.fullname, t.department, 
+           c.name AS course_name, c.code, 
+           COUNT(sc.student_id) AS student_count
+    FROM teachers t
+    INNER JOIN schools s ON t.school_id = s.id
+    LEFT JOIN teacher_courses tc ON t.id = tc.teacher_id
+    LEFT JOIN courses c ON tc.course_id = c.id
+    LEFT JOIN student_courses sc ON c.id = sc.course_id
+    WHERE s.slug = ?
+    GROUP BY t.id, t.fullname, t.department, c.name, c.code
+    ORDER BY t.fullname ASC`
 
-	type CourseInfo struct {
-		Name         string `json:"name"`
-		Code         string `json:"code"`
-		StudentCount int    `json:"student_count"`
-	}
+    log.Printf("[DEBUG] Running query: %s", query)
 
-	type Teacher struct {
-		ID         int          `json:"id"`
-		FullName   string       `json:"fullname"`
-		Department string       `json:"department"`
-		Courses    []CourseInfo `json:"courses"`
-	}
+    rows, err := database.DB.Query(query, schoolSlug)
+    if err != nil {
+        log.Printf("[ERROR] Query failed for slug=%s: %v", schoolSlug, err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teacher data"})
+        return
+    }
+    defer rows.Close()
 
-	teacherMap := make(map[int]*Teacher)
+    type CourseInfo struct {
+        Name         string `json:"name"`
+        Code         string `json:"code"`
+        StudentCount int    `json:"student_count"`
+    }
 
-	for rows.Next() {
-		var id int
-		var fullname, department, courseName, courseCode string
-		var studentCount int
+    type Teacher struct {
+        ID         int          `json:"id"`
+        FullName   string       `json:"fullname"`
+        Department string       `json:"department"`
+        Courses    []CourseInfo `json:"courses"`
+    }
 
-		err := rows.Scan(&id, &fullname, &department, &courseName, &courseCode, &studentCount)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning teacher row"})
-			return
-		}
+    teacherMap := make(map[int]*Teacher)
+    rowCount := 0
 
-		if _, exists := teacherMap[id]; !exists {
-			teacherMap[id] = &Teacher{
-				ID:         id,
-				FullName:   fullname,
-				Department: department,
-				Courses:    []CourseInfo{},
-			}
-		}
+    for rows.Next() {
+        var (
+            id           int
+            fullname     string
+            department   string
+            courseName   sql.NullString
+            courseCode   sql.NullString
+            studentCount int64 // FIX: use int64 for COUNT()
+        )
 
-		// Only add course if it's not null (in case of teachers with no courses)
-		if courseName != "" {
-			teacherMap[id].Courses = append(teacherMap[id].Courses, CourseInfo{
-				Name:         courseName,
-				Code:         courseCode,
-				StudentCount: studentCount,
-			})
-		}
-	}
+        err := rows.Scan(&id, &fullname, &department, &courseName, &courseCode, &studentCount)
+        if err != nil {
+            log.Printf("[ERROR] Row scan failed for slug=%s: %v", schoolSlug, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning teacher row"})
+            return
+        }
 
-	var teachers []Teacher
-	for _, t := range teacherMap {
-		teachers = append(teachers, *t)
-	}
+        rowCount++
+        log.Printf("[DEBUG] Row #%d -> id=%d, fullname=%s, dept=%s, courseName=%v, courseCode=%v, studentCount=%d",
+            rowCount, id, fullname, department, courseName, courseCode, studentCount)
 
-	c.JSON(http.StatusOK, teachers)
+        if _, exists := teacherMap[id]; !exists {
+            log.Printf("[DEBUG] Creating new teacher entry for ID=%d", id)
+            teacherMap[id] = &Teacher{
+                ID:         id,
+                FullName:   fullname,
+                Department: department,
+                Courses:    []CourseInfo{},
+            }
+        }
+
+        if courseName.Valid {
+            log.Printf("[DEBUG] Adding course for teacherID=%d -> %s (%s), studentCount=%d",
+                id, courseName.String, courseCode.String, studentCount)
+
+            teacherMap[id].Courses = append(teacherMap[id].Courses, CourseInfo{
+                Name:         courseName.String,
+                Code:         courseCode.String,
+                StudentCount: int(studentCount), // safe cast back to int
+            })
+        }
+    }
+
+    if err := rows.Err(); err != nil {
+        log.Printf("[ERROR] Rows iteration error: %v", err)
+    }
+
+    var teachers []Teacher
+    for _, t := range teacherMap {
+        teachers = append(teachers, *t)
+    }
+
+    log.Printf("[DEBUG] Returning %d teachers for slug=%s", len(teachers), schoolSlug)
+    c.JSON(http.StatusOK, teachers)
 }
+
+
+
+
 func GetAllStudentsDetailed(c *gin.Context) {
-	fmt.Println("Starting GetAllStudentsDetailed handler...")
+    schoolSlug := c.Param("slug") // assuming route: /api/:school_slug/students
 
-	query := `
-	SELECT s.id, s.fullname, s.department,
-	       c.name AS course_name, c.code
-	FROM students s
-	LEFT JOIN student_courses sc ON s.id = sc.student_id
-	LEFT JOIN courses c ON sc.course_id = c.id
-	ORDER BY s.fullname ASC`
+    query := `
+    SELECT s.id, s.fullname, s.department,
+           c.name AS course_name, c.code
+    FROM students s
+    INNER JOIN schools scs ON s.school_id = scs.id
+    LEFT JOIN student_courses sc ON s.id = sc.student_id
+    LEFT JOIN courses c ON sc.course_id = c.id
+    WHERE scs.slug = ?
+    ORDER BY s.fullname ASC`
 
-	rows, err := database.DB.Query(query)
-	if err != nil {
-		fmt.Println("Query error:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch student data"})
-		return
-	}
-	defer rows.Close()
+    rows, err := database.DB.Query(query, schoolSlug)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch student data"})
+        return
+    }
+    defer rows.Close()
 
-	type CourseInfo struct {
-		Name string `json:"name"`
-		Code string `json:"code"`
-	}
+    type CourseInfo struct {
+        Name string `json:"name"`
+        Code string `json:"code"`
+    }
 
-	type Student struct {
-		ID         int          `json:"id"`
-		FullName   string       `json:"fullname"`
-		Department string       `json:"department"`
-		Courses    []CourseInfo `json:"courses"`
-	}
+    type Student struct {
+        ID         int          `json:"id"`
+        FullName   string       `json:"fullname"`
+        Department string       `json:"department"`
+        Courses    []CourseInfo `json:"courses"`
+    }
 
-	studentMap := make(map[int]*Student)
+    studentMap := make(map[int]*Student)
 
-	for rows.Next() {
-		var (
-			id           int
-			fullname     string
-			department   string
-			courseName   sql.NullString
-			courseCode   sql.NullString
-		)
+    for rows.Next() {
+        var (
+            id         int
+            fullname   string
+            department string
+            courseName sql.NullString
+            courseCode sql.NullString
+        )
 
-		err := rows.Scan(&id, &fullname, &department, &courseName, &courseCode)
-		if err != nil {
-			fmt.Println("Scan error:", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning student row"})
-			return
-		}
+        err := rows.Scan(&id, &fullname, &department, &courseName, &courseCode)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning student row"})
+            return
+        }
 
-		fmt.Printf("Scanned Student: ID=%d, Name=%s, Dept=%s, Course=%s, Code=%s\n",
-			id, fullname, department, courseName.String, courseCode.String)
+        if _, exists := studentMap[id]; !exists {
+            studentMap[id] = &Student{
+                ID:         id,
+                FullName:   fullname,
+                Department: department,
+                Courses:    []CourseInfo{},
+            }
+        }
 
-		if _, exists := studentMap[id]; !exists {
-			studentMap[id] = &Student{
-				ID:         id,
-				FullName:   fullname,
-				Department: department,
-				Courses:    []CourseInfo{},
-			}
-		}
+        if courseName.Valid && courseCode.Valid {
+            studentMap[id].Courses = append(studentMap[id].Courses, CourseInfo{
+                Name: courseName.String,
+                Code: courseCode.String,
+            })
+        }
+    }
 
-		// Only append if course info is present
-		if courseName.Valid && courseCode.Valid {
-			studentMap[id].Courses = append(studentMap[id].Courses, CourseInfo{
-				Name: courseName.String,
-				Code: courseCode.String,
-			})
-		}
-	}
+    var students []Student
+    for _, s := range studentMap {
+        students = append(students, *s)
+    }
 
-	var students []Student
-	for _, s := range studentMap {
-		students = append(students, *s)
-	}
-
-	fmt.Println("Returning students count:", len(students))
-	c.JSON(http.StatusOK, students)
+    c.JSON(http.StatusOK, students)
 }

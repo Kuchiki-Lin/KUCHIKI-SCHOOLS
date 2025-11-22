@@ -18,6 +18,9 @@ export default function LogoutButton() {
     }
   };
 
-  return <button className="w-20 bg-white-600 border-2 border-black"
-  onClick={handleLogout}>Logout</button>;
+  return <button className="p-2 border-2 bg-black/15 hover:bg-red-100 rounded-2xl"
+  style={{fontFamily:"cursive"}}
+  onClick={handleLogout}
+ 
+  >LOGOUT</button>;
 }

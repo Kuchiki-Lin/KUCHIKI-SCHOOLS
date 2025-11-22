@@ -8,6 +8,15 @@
   --foreground: #171717;
 }
 
+body {
+  
+   
+   
+    background-color: color-mix(in srgb, #000 80%,transparent);
+
+}
+
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

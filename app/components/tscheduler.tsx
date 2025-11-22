@@ -299,7 +299,7 @@ showMessage(`Failed to add schedule: ${error.message}`, 'error');
   const monthYearString = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-indigo-200 p-6 font-inter text-gray-800 flex-1"> {/* Added flex-1 here */}
+    <div className="min-h-screen  p-6 font-inter text-gray-800 flex-1"> {/* Added flex-1 here */}
       {/* Global styles for Inter font */}
       <style>{`
         body {
@@ -319,8 +319,11 @@ showMessage(`Failed to add schedule: ${error.message}`, 'error');
        
 
         {/* Add New Schedule Form */}
-        <div className="mb-10 p-6 bg-indigo-50 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-indigo-600 mb-4">Set Classes</h2>
+        <div className="mb-10 p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl mb-4"
+          style={{fontFamily:"cursive",}}
+          
+          >Set Classes</h2>
           <form onSubmit={handleAddSchedule} className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Course Selection */}
             <div className="md:col-span-1">
@@ -421,7 +424,7 @@ showMessage(`Failed to add schedule: ${error.message}`, 'error');
             {/* Add Schedule Button */}
             <button
               type="submit"
-              className="md:col-span-3 bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 shadow-lg"
+              className="md:col-span-3 bg-black/50   py-3 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 shadow-lg"
             >
               Add Schedule
             </button>
@@ -452,16 +455,18 @@ showMessage(`Failed to add schedule: ${error.message}`, 'error');
           <div className="flex justify-between items-center mb-6">
             <button
               onClick={goToPreviousMonth}
-              className="p-3 bg-indigo-500 text-white rounded-full shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200"
+              className="p-3 bg-black/50  rounded-full shadow-md hover:bg-black/15 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition duration-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 className="text-3xl font-bold text-indigo-700">{monthYearString}</h2>
+            <h2 className="text-3xl font-bold "
+            style={{fontFamily:"cursive"}}
+            >{monthYearString}</h2>
             <button
               onClick={goToNextMonth}
-              className="p-3 bg-indigo-500 text-white rounded-full shadow-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200"
+              className="p-3  bg-black/50 rounded-full shadow-md hover:bg-black/15 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition duration-200"
             >
               <svg xmlns="https://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

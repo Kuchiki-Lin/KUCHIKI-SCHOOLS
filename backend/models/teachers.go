@@ -14,6 +14,8 @@ type Teacher struct {
     EmployeeId string `json:"employeeId"`
     Department string `json:"department"`  
     Year        string `json:"year"`
+    BackgroundURL string `json:"background_url"`
+    Slug             string `json:"slug"`
    CreatedAt time.Time  `json:"created_at"`
 
 }

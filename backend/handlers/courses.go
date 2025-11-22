@@ -15,12 +15,12 @@ type AssignCoursesPayload struct {
 func AssignCoursesToTeacher(c *gin.Context) {
     teacherID := c.Param("id")
     var payload AssignCoursesPayload
-
     if err := c.BindJSON(&payload); 
 	err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
         return
     }
+    fmt.Println("[DEBUG]", c)
 
     // Fetch teacher name
     var teacherName string
@@ -72,6 +72,54 @@ func AssignCoursesToTeacher(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "Courses assigned successfully"})
 }
+
+
+func DeleteAssignedCourse(c *gin.Context) {
+    teacherID := c.Param("id")
+    courseID := c.Param("courseId")
+
+    // First, check if assignment exists
+    var exists bool
+    err := database.DB.QueryRow(
+        "SELECT EXISTS (SELECT 1 FROM teacher_courses WHERE teacher_id = ? AND course_id = ?)",
+        teacherID, courseID,
+    ).Scan(&exists)
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check assignment"})
+        return
+    }
+
+    if !exists {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Course assignment not found"})
+        return
+    }
+
+    // Delete assignment
+    result, err := database.DB.Exec(
+        "DELETE FROM teacher_courses WHERE teacher_id = ? AND course_id = ?",
+        teacherID, courseID,
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete assignment"})
+        return
+    }
+
+    rowsAffected, _ := result.RowsAffected()
+    if rowsAffected == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "No assignment removed"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "message":     "Course unassigned successfully",
+        "teacher_id":  teacherID,
+        "course_id":   courseID,
+        "rowsDeleted": rowsAffected,
+    })
+}
+
+
 
 func GetAllCourses(c *gin.Context) {
     rows, err := database.DB.Query("SELECT id, name, code FROM courses")
@@ -150,6 +198,7 @@ func GetTeacherCourses(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch courses"})
 		return
 	}
+
 	defer rows.Close()
 
 	type Course struct {

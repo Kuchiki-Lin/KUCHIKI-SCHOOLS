@@ -56,28 +56,57 @@ export default function ClassesThisWeek({ studentId }: { studentId: number }) {
   const today = getToday();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-10
+    bg-white
+    "
+    
+    style={{fontFamily:"cursive", fontWeight:"bold"}}
+    >
       {classes.map((cls, index) => {
         const isToday = cls.day_of_week === today;
         return (
-          <Card
-            key={index}
-            title={`${cls.course_name} - ${cls.day_of_week}`}
-            className={`border-2 ${
-              isToday
-                ? "border-yellow-400 bg-yellow-50 shadow-lg"
-                : "border-gray-300 bg-white"
-            }`}
-          >
-            <p><strong>Time:</strong> {cls.start_time} - {cls.end_time}</p>
-            <p><strong>Venue:</strong> {cls.venue}</p>
-            <p><strong>Semester:</strong> {cls.semester}</p>
-            {isToday && (
-              <p className="text-yellow-700 font-semibold mt-2">
-                📣 TODAY YOU HAVE <span className="uppercase">{cls.course_name}</span>!
-              </p>
-            )}
-          </Card>
+          <div>
+
+<Card
+  key={index}
+  style={{ backgroundColor: "inherit", 
+    border:"2px solid black"
+  }}
+  title={
+    <div className="flex justify-between items-center">
+      <span className="text-lg font-bold
+      text-green-700
+      " style={{ fontFamily: "cursive" }}>
+        {cls.course_name}
+      </span>
+      <span className="text-md  italic"
+      style={{ fontFamily: "cursive" }}
+      >
+        {cls.day_of_week}
+      </span>
+    </div>
+  }
+
+>
+  <p>
+    <strong>Time:</strong> {cls.start_time} - {cls.end_time}
+  </p>
+  <p>
+    <strong>Venue:</strong> {cls.venue}
+  </p>
+  <p>
+    <strong>Semester:</strong> {cls.semester}
+  </p>
+  {isToday && (
+    <p className="text-green-700 font-semibold mt-2">
+      📣 TODAY YOU HAVE{" "}
+      <span className="uppercase">{cls.course_name}</span>!
+    </p>
+  )}
+</Card>
+
+          </div>
+        
         );
       })}
     </div>

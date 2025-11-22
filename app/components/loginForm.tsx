@@ -13,30 +13,40 @@ interface LoginFormProps {
 export default function LoginForm({ title, onLogin }: LoginFormProps) {
   return (
     <Card
-      className="border-2 border-white text-white"
+      className="border-2 w-fit h-fit"
       style={{
         maxWidth: 420,
         width: '100%',
         padding: '2rem',
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        color: 'white',
+        backgroundColor:"white",
+               
         backdropFilter: 'blur(8px)',
       }}
        variant="borderless" 
     >
-      <Title
+      <div>
+
+
+
+<Title
         level={3}
+
         style={{
           textAlign: 'center',
           marginBottom: '2rem',
-          color: 'white',
-          fontWeight: 500,
+          color: 'black',
+          backgroundColor:"white"
+,          fontFamily:"cursive",
+          fontWeight: 800,
         }}
       >
         {title}
       </Title>
 
+
+      </div>
+      
       <Form
         name="login"
         layout="vertical"
@@ -45,7 +55,7 @@ export default function LoginForm({ title, onLogin }: LoginFormProps) {
       >
         <Form.Item
           label={
-            <span style={{ color: 'white', fontSize: '16px', fontWeight: 300 }}>
+            <span style={{  fontSize: '14px', fontWeight: 500,fontFamily:"cursive"  }}>
               Username
             </span>
           }
@@ -53,20 +63,20 @@ export default function LoginForm({ title, onLogin }: LoginFormProps) {
           rules={[{ required: true, message: 'Please enter your username' }]}
         >
           <Input
-            prefix={<UserOutlined style={{ color: 'white' }} />}
+            prefix={<UserOutlined/>}
             placeholder="Enter your username"
             style={{
-              color: 'white',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderColor: 'white',
+              fontFamily:"cursive",
+              
+              borderColor: 'black',
             }}
-            className="placeholder-white"
+            className="placeholder-black"
           />
         </Form.Item>
 
         <Form.Item
           label={
-            <span style={{ color: 'white', fontSize: '16px', fontWeight: 300 }}>
+            <span style={{ fontSize: '14px', fontWeight: 500,fontFamily:"cursive"  }}>
               Password
             </span>
           }
@@ -74,26 +84,27 @@ export default function LoginForm({ title, onLogin }: LoginFormProps) {
           rules={[{ required: true, message: 'Please enter your password' }]}
         >
           <Input.Password
-            prefix={<LockOutlined style={{ color: 'white' }} />}
+            prefix={<LockOutlined />}
             placeholder="Enter your password"
             style={{
-              color: 'white',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderColor: 'white',
+              color: 'black',
+      
+              borderColor: 'black',
             }}
-            className="placeholder-white"
+            className="placeholder-black"
           />
         </Form.Item>
 
         <Form.Item name="remember" valuePropName="checked">
-          <Checkbox style={{ color: 'white' }}>Remember me</Checkbox>
+          <Checkbox style={{fontFamily:"cursive",}}
+          >Remember me</Checkbox>
         </Form.Item>
 
         <Form.Item>
           <Button
             htmlType="submit"
             block
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition duration-200 border-none"
+            className=" hover:bg-black/15 text-black font-medium py-2 rounded transition duration-200 border-none"
             type="default"
           >
             Log in
